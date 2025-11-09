@@ -1,0 +1,1651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>党员档案管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #d32f2f;
+            --secondary-color: #f5f5f5;
+            --accent-color: #1976d2;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), #b71c1c);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            margin-bottom: 20px;
+            border: none;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            padding: 15px 20px;
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #b71c1c;
+            border-color: #b71c1c;
+        }
+        
+        .sidebar {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .table th {
+            background-color: var(--primary-color);
+            color: white;
+            text-align: center;
+        }
+        
+        .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        .search-box {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .action-buttons .btn {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .modal-header {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .status-in {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .status-out {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .status-transfer {
+            color: #ff9800;
+            font-weight: bold;
+        }
+        
+        .status-unregistered {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        
+        .member-id {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .batch-operations {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .stats-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .stats-number {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .pagination-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+        
+        /* 为特定支部名称添加字符间距 */
+        .branch-spacing {
+            letter-spacing: 4px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #dee2e6;
+        }
+        
+        /* 各支部统计样式 - 3x3网格布局，矩形长度缩小一半 */
+        .branch-stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .branch-stats-item {
+            display: flex;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+            min-height: 60px;
+        }
+
+        .branch-stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .branch-name {
+            flex: 1;
+            font-weight: bold;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            height: 100%;
+            padding-right: 10px;
+            font-size: 14px;
+        }
+
+        .branch-data-container {
+            display: grid;
+            grid-template-columns: 1.5fr 1.5fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            width: 90px; /* 长度缩小一倍 */
+            height: 90px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .branch-total {
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-column: 1;
+            grid-row: 1 / span 2;
+            font-weight: bold;
+            font-size: 14px; /* 字体相应缩小 */
+        }
+
+        .branch-in-file {
+            background-color: #28a745;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-column: 2;
+            grid-row: 1;
+            font-size: 14px; /* 统一字体大小 */
+            font-weight: bold; /* 统一字体粗细 */
+        }
+
+        .branch-no-file {
+            background-color: #dc3545;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-column: 2;
+            grid-row: 2;
+            font-size: 14px; /* 统一字体大小 */
+            font-weight: bold; /* 统一字体粗细 */
+        }
+
+        .branch-transferred {
+            background-color: #ffc107;
+            color: #212529;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-column: 1;
+            grid-row: 3;
+            font-size: 14px; /* 统一字体大小 */
+            font-weight: bold; /* 统一字体粗细 */
+        }
+
+        .branch-unregistered {
+            background-color: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            grid-column: 2;
+            grid-row: 3;
+            font-size: 14px; /* 统一字体大小 */
+            font-weight: bold; /* 统一字体粗细 */
+        }
+        
+        @media (max-width: 768px) {
+            .batch-operations {
+                position: static;
+                transform: none;
+                margin-top: 15px;
+                text-align: center;
+            }
+            
+            .header .container {
+                text-align: center;
+            }
+            
+            .pagination-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .branch-data-container {
+                width: 75px; /* 移动端也相应缩小 */
+                height: 75px;
+            }
+            
+            .branch-stats-item {
+                min-height: 50px;
+            }
+            
+            .branch-name {
+                font-size: 12px;
+            }
+            
+            .branch-total {
+                font-size: 12px;
+            }
+            
+            .branch-in-file,
+            .branch-no-file,
+            .branch-transferred,
+            .branch-unregistered {
+                font-size: 12px; /* 移动端统一字体大小 */
+                font-weight: bold; /* 统一字体粗细 */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <div class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h1><i class="fas fa-archive me-2"></i>党员档案管理系统</h1>
+                    <p class="mb-0">高效管理党员档案，支持批量操作与多维度查询</p>
+                </div>
+                <div class="col-md-6">
+                    <div class="batch-operations">
+                        <div class="btn-group">
+                            <button class="btn btn-outline-light" id="importBtn">
+                                <i class="fas fa-file-import me-1"></i>批量导入
+                            </button>
+                            <button class="btn btn-outline-light" id="exportBtn">
+                                <i class="fas fa-file-export me-1"></i>批量导出
+                            </button>
+                            <button class="btn btn-outline-light" id="clearAllBtn">
+                                <i class="fas fa-trash-alt me-1"></i>一键清空
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容 -->
+    <div class="container mt-4">
+        <div class="row">
+            <!-- 左侧边栏 -->
+            <div class="col-md-3">
+                <div class="sidebar mb-4">
+                    <h5 class="mb-3"><i class="fas fa-filter me-2"></i>查询筛选</h5>
+                    <div class="mb-3">
+                        <label for="branchSelect" class="form-label">按支部查询</label>
+                        <select class="form-select" id="branchSelect">
+                            <option value="all">全部支部</option>
+                            <!-- 镇政府与山咀村位置互换 -->
+                            <option value="镇政府" class="branch-spacing">镇政府</option>
+                            <option value="山咀村" class="branch-spacing">山咀村</option>
+                            <option value="梨楼堡村">梨楼堡村</option>
+                            <option value="对子峪村">对子峪村</option>
+                            <option value="王家堡村">王家堡村</option>
+                            <option value="宋家堡村">宋家堡村</option>
+                            <option value="接文村" class="branch-spacing">接文村</option>
+                            <option value="夺獐峪村">夺獐峪村</option>
+                            <option value="大桃沟村">大桃沟村</option>
+                            <option value="黑峪村" class="branch-spacing">黑峪村</option>
+                            <option value="东大岭村">东大岭村</option>
+                            <option value="孙家坎村">孙家坎村</option>
+                            <option value="老牛寨村">老牛寨村</option>
+                            <option value="石头寨村">石头寨村</option>
+                            <option value="花红峪村">花红峪村</option>
+                            <option value="三家堡村">三家堡村</option>
+                            <option value="非公企" class="branch-spacing">非公企</option>
+                            <option value="其他支部">其他支部</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="yearSearch" class="form-label">入党年度</label>
+                        <input type="text" class="form-control" id="yearSearch" placeholder="输入年度，如2023">
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusSelect" class="form-label">档案情况</label>
+                        <select class="form-select" id="statusSelect">
+                            <option value="all">全部状态</option>
+                            <option value="有档案">有档案</option>
+                            <option value="无档案">无档案</option>
+                            <option value="已转出">已转出</option>
+                            <option value="未入册">未入册</option>
+                        </select>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="searchBtn">
+                            <i class="fas fa-search me-1"></i>查询
+                        </button>
+                        <button class="btn btn-outline-secondary" id="resetBtn">
+                            <i class="fas fa-redo me-1"></i>重置
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar">
+                    <h5 class="mb-3"><i class="fas fa-chart-bar me-2"></i>数据统计</h5>
+                    <div class="stats-card">
+                        <div class="stats-title">全镇统计</div>
+                        <div class="stats-item">
+                            <span>总党员人数：</span>
+                            <span class="stats-number" id="totalMembers">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>有档案人数：</span>
+                            <span class="stats-number" id="totalInFile">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>无档案人数：</span>
+                            <span class="stats-number" id="totalNoFile">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>已转出人数：</span>
+                            <span class="stats-number" id="totalTransferred">0</span>
+                        </div>
+                        <div class="stats-item">
+                            <span>未入册人数：</span>
+                            <span class="stats-number" id="totalUnregistered">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="stats-title">各支部统计</div>
+                        <div class="branch-stats-container" id="branchStats">
+                            <!-- 各支部统计数据将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧内容 -->
+            <div class="col-md-9">
+                <div class="search-box">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="输入党员姓名或编号进行模糊搜索..." id="keywordInput">
+                                <button class="btn btn-primary" type="button" id="keywordSearch">
+                                    <i class="fas fa-search"></i> 搜索
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button class="btn btn-primary" id="addMemberBtn">
+                                <i class="fas fa-plus me-1"></i>添加党员
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span><i class="fas fa-list me-2"></i>党员档案列表</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="memberTable">
+                                <thead>
+                                    <tr>
+                                        <th width="8%">序号</th>
+                                        <th width="15%">党员编号</th>
+                                        <th width="15%">入党年度</th>
+                                        <th width="15%">党员姓名</th>
+                                        <th width="15%">所属支部</th>
+                                        <th width="15%">档案情况</th>
+                                        <th width="17%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="memberTableBody">
+                                    <!-- 数据将通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 空状态 -->
+                        <div class="empty-state" id="emptyState" style="display: none;">
+                            <i class="fas fa-inbox"></i>
+                            <h4>暂无党员数据</h4>
+                            <p>请添加党员信息或导入Excel文件</p>
+                            <button class="btn btn-primary mt-2" id="addMemberEmptyBtn">
+                                <i class="fas fa-plus me-1"></i>添加党员
+                            </button>
+                        </div>
+                        
+                        <!-- 分页控件 -->
+                        <div class="pagination-controls" id="paginationControls" style="display: none;">
+                            <div>
+                                <label for="pageSizeSelect" class="form-label me-2">每页显示：</label>
+                                <select class="form-select form-select-sm d-inline-block w-auto" id="pageSizeSelect">
+                                    <option value="50">50条</option>
+                                </select>
+                            </div>
+                            <div>
+                                <nav>
+                                    <ul class="pagination pagination-sm mb-0" id="pagination">
+                                        <!-- 分页按钮将通过JavaScript动态生成 -->
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑党员档案模态框 -->
+    <div class="modal fade" id="memberModal" tabindex="-1" aria-labelledby="memberModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="memberModalLabel">添加党员档案</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="memberForm">
+                        <div class="mb-3">
+                            <label for="memberId" class="form-label">党员编号</label>
+                            <input type="text" class="form-control" id="memberId" readonly>
+                            <div class="form-text">系统根据支部或党员类型自动生成编号</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="memberName" class="form-label">党员姓名</label>
+                            <input type="text" class="form-control" id="memberName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="joinYear" class="form-label">入党年度</label>
+                            <input type="text" class="form-control" id="joinYear" placeholder="请输入4位数字年份，如2023" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="branch" class="form-label">所属支部</label>
+                            <select class="form-select" id="branch" required>
+                                <!-- 镇政府与山咀村位置互换 -->
+                                <option value="镇政府" class="branch-spacing">镇政府</option>
+                                <option value="山咀村" class="branch-spacing">山咀村</option>
+                                <option value="梨楼堡村">梨楼堡村</option>
+                                <option value="对子峪村">对子峪村</option>
+                                <option value="王家堡村">王家堡村</option>
+                                <option value="宋家堡村">宋家堡村</option>
+                                <option value="接文村" class="branch-spacing">接文村</option>
+                                <option value="夺獐峪村">夺獐峪村</option>
+                                <option value="大桃沟村">大桃沟村</option>
+                                <option value="黑峪村" class="branch-spacing">黑峪村</option>
+                                <option value="东大岭村">东大岭村</option>
+                                <option value="孙家坎村">孙家坎村</option>
+                                <option value="老牛寨村">老牛寨村</option>
+                                <option value="石头寨村">石头寨村</option>
+                                <option value="花红峪村">花红峪村</option>
+                                <option value="三家堡村">三家堡村</option>
+                                <option value="非公企" class="branch-spacing">非公企</option>
+                                <option value="其他支部">其他支部</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">档案情况</label>
+                            <div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fileStatus" id="fileIn" value="有档案" checked>
+                                    <label class="form-check-label" for="fileIn">有档案</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fileStatus" id="fileOut" value="无档案">
+                                    <label class="form-check-label" for="fileOut">无档案</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fileStatus" id="fileTransfer" value="已转出">
+                                    <label class="form-check-label" for="fileTransfer">已转出</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="fileStatus" id="fileUnregistered" value="未入册">
+                                    <label class="form-check-label" for="fileUnregistered">未入册</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3" id="memberTypeGroup" style="display: none;">
+                            <!-- 添加调整时间字段 -->
+                            <div class="mb-3" id="adjustDateGroup">
+                                <label for="adjustDate" class="form-label">调整时间</label>
+                                <input type="date" class="form-control" id="adjustDate">
+                            </div>
+                            <label for="memberType" class="form-label">党员类型</label>
+                            <select class="form-select" id="memberType">
+                                <option value="未知档案">未知档案</option>
+                                <option value="未批作废">未批作废</option>
+                                <option value="党员转出">党员转出</option>
+                                <option value="开除党籍">开除党籍</option>
+                                <option value="党员死亡">党员死亡</option>
+                                <option value="牺牲死亡">牺牲死亡</option>
+                                <option value="劝其退党">劝其退党</option>
+                            </select>
+                        </div>
+                        <!-- 对调转出时间和转出地位置 -->
+                        <div class="mb-3" id="transferDateGroup" style="display: none;">
+                            <label for="transferDate" class="form-label">转出时间</label>
+                            <input type="date" class="form-control" id="transferDate">
+                        </div>
+                        <div class="mb-3" id="transferPlaceGroup" style="display: none;">
+                            <label for="transferPlace" class="form-label">转出地</label>
+                            <input type="text" class="form-control" id="transferPlace" placeholder="请输入转出地">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveMemberBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量导入模态框 -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">批量导入党员档案</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>导入说明</h6>
+                        <ul class="mb-0">
+                            <li>请上传Excel文件，文件应包含以下列：<strong>党员编号、入党年度、党员姓名、所属支部、档案情况</strong></li>
+                            <li>可选列：党员类型（未入册时必须）、调整时间、转出地（已转出时必须）、转出时间（已转出时必须）</li>
+                            <li>如果导入数据中有任何错误，则全部数据均无法导入</li>
+                            <li>系统将验证数据格式，确保数据完整性和准确性</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">选择Excel文件</label>
+                        <input class="form-control" type="file" id="excelFile" accept=".xlsx, .xls">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm" id="downloadTemplateBtn">
+                            <i class="fas fa-download me-1"></i>下载导入模板
+                        </button>
+                    </div>
+                    
+                    <div class="form-text">
+                        支持格式: .xlsx, .xls | 最大文件大小: 10MB
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>数据验证规则：</h6>
+                        <ul class="small">
+                            <li>党员编号：必须唯一，不能与现有记录重复</li>
+                            <li>入党年度：必须是4位数字（如：2023）</li>
+                            <li>党员姓名：不能为空</li>
+                            <li>所属支部：不能为空</li>
+                            <li>档案情况：必须是"有档案"、"无档案"、"已转出"或"未入册"</li>
+                            <li>未入册党员：必须指定党员类型</li>
+                            <li>已转出党员：必须指定转出地和转出时间</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" id="confirmImportBtn">导入</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 支部前缀映射
+        const branchPrefixes = {
+            "山咀村": "JWSZC",
+            "镇政府": "JWZZZF",
+            "梨楼堡村": "JWLLB",
+            "对子峪村": "JWDŽY",
+            "王家堡村": "JWWJB",
+            "宋家堡村": "JWSJB",
+            "接文村": "JWJWC",
+            "夺獐峪村": "JWDZY",
+            "大桃沟村": "JWDTG",
+            "黑峪村": "JWHY",
+            "东大岭村": "JWDDL",
+            "孙家坎村": "JWSJK",
+            "老牛寨村": "JWLNZ",
+            "石头寨村": "JWSTZ",
+            "花红峪村": "JWHHY",
+            "三家堡村": "JWSJP",
+            "非公企": "JWFGQ",
+            "其他支部": "JWQTB"
+        };
+
+        // 未入册类型前缀映射
+        const unregisteredPrefixes = {
+            "未知档案": "JWWZD",
+            "未批作废": "JWZFD",
+            "党员转出": "JWZCD",
+            "开除党籍": "JWKCD",
+            "党员死亡": "JWSWD",
+            "牺牲死亡": "JWXSD",
+            "劝其退党": "JWQTD"
+        };
+
+        // 党员数据 - 初始为空
+        let memberData = [];
+        
+        // 分页相关变量
+        let currentPage = 1;
+        let pageSize = 50; // 修改为50条
+        let currentData = [];
+        
+        // 当前编辑的党员ID
+        let currentEditId = null;
+        
+        // 定义支部顺序，确保与下拉选项一致
+        const branchOrder = [
+            "镇政府",
+            "山咀村",
+            "梨楼堡村",
+            "对子峪村",
+            "王家堡村",
+            "宋家堡村",
+            "接文村",
+            "夺獐峪村",
+            "大桃沟村",
+            "黑峪村",
+            "东大岭村",
+            "孙家坎村",
+            "老牛寨村",
+            "石头寨村",
+            "花红峪村",
+            "三家堡村",
+            "非公企",
+            "其他支部"
+        ];
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage加载数据
+            loadDataFromStorage();
+            
+            // 默认显示所有数据
+            currentData = memberData;
+            updateStatistics();
+            renderMemberTable();
+            
+            // 绑定事件
+            document.getElementById('searchBtn').addEventListener('click', handleSearch);
+            document.getElementById('resetBtn').addEventListener('click', handleReset);
+            document.getElementById('keywordSearch').addEventListener('click', handleKeywordSearch);
+            document.getElementById('addMemberBtn').addEventListener('click', showAddModal);
+            document.getElementById('saveMemberBtn').addEventListener('click', saveMember);
+            document.getElementById('importBtn').addEventListener('click', showImportModal);
+            document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+            document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
+            document.getElementById('confirmImportBtn').addEventListener('click', importFromExcel);
+            document.getElementById('addMemberEmptyBtn').addEventListener('click', showAddModal);
+            document.getElementById('pageSizeSelect').addEventListener('change', function() {
+                pageSize = parseInt(this.value);
+                currentPage = 1;
+                renderMemberTable();
+            });
+            
+            // 监听支部选择变化，自动生成党员编号
+            document.getElementById('branch').addEventListener('change', function() {
+                const branch = this.value;
+                const fileStatus = document.querySelector('input[name="fileStatus"]:checked').value;
+                
+                if (fileStatus === "未入册") {
+                    // 如果是未入册，根据党员类型生成编号
+                    const memberType = document.getElementById('memberType').value;
+                    if (memberType && unregisteredPrefixes[memberType]) {
+                        const prefix = unregisteredPrefixes[memberType];
+                        // 查找该类型已有的最大编号
+                        const existingIds = memberData
+                            .filter(m => m.fileStatus === "未入册" && m.memberType === memberType)
+                            .map(m => parseInt(m.memberId.replace(prefix, '')))
+                            .filter(id => !isNaN(id));
+                        
+                        const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                        // 确保编号长度一致，统一为8位字符
+                        const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                        
+                        document.getElementById('memberId').value = prefix + formattedId;
+                    }
+                } else if (branch && branchPrefixes[branch]) {
+                    // 查找该支部已有的最大编号
+                    const existingIds = memberData
+                        .filter(m => m.branch === branch && m.fileStatus !== "未入册")
+                        .map(m => parseInt(m.memberId.replace(branchPrefixes[branch], '')))
+                        .filter(id => !isNaN(id));
+                    
+                    const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                    // 确保编号长度一致，统一为8位字符
+                    const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                    
+                    document.getElementById('memberId').value = branchPrefixes[branch] + formattedId;
+                }
+            });
+            
+            // 监听档案情况变化，显示/隐藏相关输入框
+            document.querySelectorAll('input[name="fileStatus"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const memberTypeGroup = document.getElementById('memberTypeGroup');
+                    const transferPlaceGroup = document.getElementById('transferPlaceGroup');
+                    const transferDateGroup = document.getElementById('transferDateGroup');
+                    
+                    if (this.value === '未入册') {
+                        memberTypeGroup.style.display = 'block';
+                        transferPlaceGroup.style.display = 'none';
+                        transferDateGroup.style.display = 'none';
+                        
+                        // 根据党员类型生成编号
+                        const memberType = document.getElementById('memberType').value;
+                        if (memberType && unregisteredPrefixes[memberType]) {
+                            const prefix = unregisteredPrefixes[memberType];
+                            // 查找该类型已有的最大编号
+                            const existingIds = memberData
+                                .filter(m => m.fileStatus === "未入册" && m.memberType === memberType)
+                                .map(m => parseInt(m.memberId.replace(prefix, '')))
+                                .filter(id => !isNaN(id));
+                            
+                            const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                            // 确保编号长度一致，统一为8位字符
+                            const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                            
+                            document.getElementById('memberId').value = prefix + formattedId;
+                        }
+                    } else if (this.value === '已转出') {
+                        memberTypeGroup.style.display = 'none';
+                        transferPlaceGroup.style.display = 'block';
+                        transferDateGroup.style.display = 'block';
+                        
+                        // 根据支部生成编号
+                        const branch = document.getElementById('branch').value;
+                        if (branch && branchPrefixes[branch]) {
+                            // 查找该支部已有的最大编号
+                            const existingIds = memberData
+                                .filter(m => m.branch === branch && m.fileStatus !== "未入册")
+                                .map(m => parseInt(m.memberId.replace(branchPrefixes[branch], '')))
+                                .filter(id => !isNaN(id));
+                            
+                            const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                            // 确保编号长度一致，统一为8位字符
+                            const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                            
+                            document.getElementById('memberId').value = branchPrefixes[branch] + formattedId;
+                        }
+                    } else {
+                        memberTypeGroup.style.display = 'none';
+                        transferPlaceGroup.style.display = 'none';
+                        transferDateGroup.style.display = 'none';
+                        
+                        // 根据支部生成编号
+                        const branch = document.getElementById('branch').value;
+                        if (branch && branchPrefixes[branch]) {
+                            // 查找该支部已有的最大编号
+                            const existingIds = memberData
+                                .filter(m => m.branch === branch && m.fileStatus !== "未入册")
+                                .map(m => parseInt(m.memberId.replace(branchPrefixes[branch], '')))
+                                .filter(id => !isNaN(id));
+                            
+                            const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                            // 确保编号长度一致，统一为8位字符
+                            const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                            
+                            document.getElementById('memberId').value = branchPrefixes[branch] + formattedId;
+                        }
+                    }
+                });
+            });
+            
+            // 监听党员类型变化，更新党员编号
+            document.getElementById('memberType').addEventListener('change', function() {
+                const memberType = this.value;
+                const fileStatus = document.querySelector('input[name="fileStatus"]:checked').value;
+                
+                if (fileStatus === "未入册" && memberType && unregisteredPrefixes[memberType]) {
+                    const prefix = unregisteredPrefixes[memberType];
+                    // 查找该类型已有的最大编号
+                    const existingIds = memberData
+                        .filter(m => m.fileStatus === "未入册" && m.memberType === memberType)
+                        .map(m => parseInt(m.memberId.replace(prefix, '')))
+                        .filter(id => !isNaN(id));
+                    
+                    const nextId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+                    // 确保编号长度一致，统一为8位字符
+                    const formattedId = nextId < 10 ? "00" + nextId : (nextId < 100 ? "0" + nextId : nextId);
+                    
+                    document.getElementById('memberId').value = prefix + formattedId;
+                }
+            });
+            
+            // 下载导入模板
+            document.getElementById('downloadTemplateBtn').addEventListener('click', function() {
+                // 创建工作簿
+                const wb = XLSX.utils.book_new();
+                
+                // 准备模板数据
+                const templateData = [
+                    {
+                        '党员编号': 'JWSZC001',
+                        '入党年度': '2023',
+                        '党员姓名': '张三',
+                        '所属支部': '山咀村',
+                        '档案情况': '有档案',
+                        '党员类型': '',
+                        '调整时间': '',
+                        '转出地': '',
+                        '转出时间': ''
+                    },
+                    {
+                        '党员编号': 'JWZZZF001', 
+                        '入党年度': '2022',
+                        '党员姓名': '李四',
+                        '所属支部': '镇政府',
+                        '档案情况': '无档案',
+                        '党员类型': '',
+                        '调整时间': '',
+                        '转出地': '',
+                        '转出时间': ''
+                    },
+                    {
+                        '党员编号': 'JWZCD001',
+                        '入党年度': '2021', 
+                        '党员姓名': '王五',
+                        '所属支部': '接文村',
+                        '档案情况': '未入册',
+                        '党员类型': '党员转出',
+                        '调整时间': '2023-06-15',
+                        '转出地': '',
+                        '转出时间': ''
+                    },
+                    {
+                        '党员编号': 'JWSJB001',
+                        '入党年度': '2020',
+                        '党员姓名': '赵六', 
+                        '所属支部': '宋家堡村',
+                        '档案情况': '已转出',
+                        '党员类型': '',
+                        '调整时间': '',
+                        '转出地': '其他支部',
+                        '转出时间': '2023-08-20'
+                    }
+                ];
+                
+                // 创建工作表
+                const ws = XLSX.utils.json_to_sheet(templateData);
+                
+                // 将工作表添加到工作簿
+                XLSX.utils.book_append_sheet(wb, ws, '党员档案模板');
+                
+                // 导出Excel文件
+                XLSX.writeFile(wb, '党员档案导入模板.xlsx');
+            });
+        });
+
+        // 从localStorage加载数据
+        function loadDataFromStorage() {
+            const storedData = localStorage.getItem('partyMemberData');
+            if (storedData) {
+                memberData = JSON.parse(storedData);
+            }
+        }
+
+        // 保存数据到localStorage
+        function saveDataToStorage() {
+            localStorage.setItem('partyMemberData', JSON.stringify(memberData));
+        }
+
+        // 清空所有数据
+        function clearAllData() {
+            if (memberData.length === 0) {
+                alert('当前没有数据可清空！');
+                return;
+            }
+            
+            if (confirm('确定要清空所有党员数据吗？此操作不可恢复！')) {
+                memberData = [];
+                currentData = [];
+                currentPage = 1;
+                
+                updateStatistics();
+                renderMemberTable();
+                saveDataToStorage();
+                
+                alert('所有党员数据已成功清空！');
+            }
+        }
+
+        // 更新统计数据
+        function updateStatistics() {
+            // 全镇统计
+            const totalInFile = memberData.filter(m => m.fileStatus === '有档案').length;
+            const totalNoFile = memberData.filter(m => m.fileStatus === '无档案').length;
+            const totalTransferred = memberData.filter(m => m.fileStatus === '已转出').length;
+            const totalUnregistered = memberData.filter(m => m.fileStatus === '未入册').length;
+            // 总党员人数 = 有档案人数 + 无档案人数
+            const totalMembers = totalInFile + totalNoFile;
+            
+            document.getElementById('totalMembers').textContent = totalMembers;
+            document.getElementById('totalInFile').textContent = totalInFile;
+            document.getElementById('totalNoFile').textContent = totalNoFile;
+            document.getElementById('totalTransferred').textContent = totalTransferred;
+            document.getElementById('totalUnregistered').textContent = totalUnregistered;
+            
+            // 各支部统计 - 使用3x3网格布局，按定义顺序显示
+            const branchStats = document.getElementById('branchStats');
+            branchStats.innerHTML = '';
+            
+            // 按照定义的支部顺序显示
+            branchOrder.forEach(branch => {
+                const branchData = memberData.filter(m => m.branch === branch);
+                // 如果该支部没有数据，则不显示
+                if (branchData.length === 0) return;
+                
+                const branchInFile = branchData.filter(m => m.fileStatus === '有档案').length;
+                const branchNoFile = branchData.filter(m => m.fileStatus === '无档案').length;
+                const branchTransferred = branchData.filter(m => m.fileStatus === '已转出').length;
+                const branchUnregistered = branchData.filter(m => m.fileStatus === '未入册').length;
+                // 支部总党员人数 = 有档案人数 + 无档案人数
+                const branchTotal = branchInFile + branchNoFile;
+                
+                const branchStatsItem = document.createElement('div');
+                branchStatsItem.className = 'branch-stats-item';
+                
+                // 为特定支部名称添加字符间距
+                let branchDisplay = branch;
+                if (['山咀村', '镇政府', '接文村', '黑峪村', '非公企'].includes(branch)) {
+                    branchDisplay = `<span class="branch-spacing">${branch}</span>`;
+                }
+                
+                branchStatsItem.innerHTML = `
+                    <div class="branch-name">${branchDisplay}</div>
+                    <div class="branch-data-container">
+                        <div class="branch-total">${branchTotal}</div>
+                        <div class="branch-in-file">${branchInFile}</div>
+                        <div class="branch-no-file">${branchNoFile}</div>
+                        <div class="branch-transferred">${branchTransferred}</div>
+                        <div class="branch-unregistered">${branchUnregistered}</div>
+                    </div>
+                `;
+                branchStats.appendChild(branchStatsItem);
+            });
+        }
+
+        // 渲染党员表格
+        function renderMemberTable() {
+            const tableBody = document.getElementById('memberTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const paginationControls = document.getElementById('paginationControls');
+            
+            // 检查是否有数据
+            if (currentData.length === 0) {
+                tableBody.innerHTML = '';
+                emptyState.style.display = 'block';
+                paginationControls.style.display = 'none';
+                return;
+            }
+            
+            // 有数据时显示表格和分页控件
+            emptyState.style.display = 'none';
+            paginationControls.style.display = 'flex';
+            tableBody.innerHTML = '';
+            
+            // 计算分页
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageData = currentData.slice(startIndex, endIndex);
+            
+            pageData.forEach((member, index) => {
+                // 根据档案情况设置样式类
+                let statusClass = '';
+                if (member.fileStatus === '有档案') {
+                    statusClass = 'status-in';
+                } else if (member.fileStatus === '无档案') {
+                    statusClass = 'status-out';
+                } else if (member.fileStatus === '已转出') {
+                    statusClass = 'status-transfer';
+                } else if (member.fileStatus === '未入册') {
+                    statusClass = 'status-unregistered';
+                }
+                
+                // 为特定支部名称添加字符间距
+                let branchDisplay = member.branch;
+                if (['山咀村', '镇政府', '接文村', '黑峪村', '非公企'].includes(member.branch)) {
+                    branchDisplay = `<span class="branch-spacing">${member.branch}</span>`;
+                }
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${startIndex + index + 1}</td>
+                    <td class="member-id">${member.memberId}</td>
+                    <td>${member.joinYear}年</td>
+                    <td>${member.name}</td>
+                    <td>${branchDisplay}</td>
+                    <td><span class="${statusClass}">${member.fileStatus}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${member.id}">
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${member.id}">
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+            
+            // 渲染分页控件
+            renderPagination();
+            
+            // 绑定编辑和删除按钮事件
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    showEditModal(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    deleteMember(id);
+                });
+            });
+        }
+
+        // 渲染分页控件 - 最多显示7个页码
+        function renderPagination() {
+            const totalPages = Math.ceil(currentData.length / pageSize);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            // 上一页按钮
+            const prevItem = document.createElement('li');
+            prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevItem.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">上一页</a>`;
+            pagination.appendChild(prevItem);
+            
+            // 页码按钮 - 最多显示7个
+            const maxVisiblePages = 7;
+            let startPage, endPage;
+            
+            if (totalPages <= maxVisiblePages) {
+                // 如果总页数小于等于7，显示所有页码
+                startPage = 1;
+                endPage = totalPages;
+            } else {
+                // 如果总页数大于7，计算显示的页码范围
+                const maxPagesBeforeCurrentPage = Math.floor(maxVisiblePages / 2);
+                const maxPagesAfterCurrentPage = Math.ceil(maxVisiblePages / 2) - 1;
+                
+                if (currentPage <= maxPagesBeforeCurrentPage) {
+                    // 当前页靠近开头
+                    startPage = 1;
+                    endPage = maxVisiblePages;
+                } else if (currentPage + maxPagesAfterCurrentPage >= totalPages) {
+                    // 当前页靠近结尾
+                    startPage = totalPages - maxVisiblePages + 1;
+                    endPage = totalPages;
+                } else {
+                    // 当前页在中间
+                    startPage = currentPage - maxPagesBeforeCurrentPage;
+                    endPage = currentPage + maxPagesAfterCurrentPage;
+                }
+            }
+            
+            // 添加第一页和省略号（如果需要）
+            if (startPage > 1) {
+                const firstPageItem = document.createElement('li');
+                firstPageItem.className = 'page-item';
+                firstPageItem.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
+                pagination.appendChild(firstPageItem);
+                
+                if (startPage > 2) {
+                    const ellipsisItem = document.createElement('li');
+                    ellipsisItem.className = 'page-item disabled';
+                    ellipsisItem.innerHTML = `<span class="page-link">...</span>`;
+                    pagination.appendChild(ellipsisItem);
+                }
+            }
+            
+            // 添加页码按钮
+            for (let i = startPage; i <= endPage; i++) {
+                const pageItem = document.createElement('li');
+                pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageItem.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                pagination.appendChild(pageItem);
+            }
+            
+            // 添加最后一页和省略号（如果需要）
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsisItem = document.createElement('li');
+                    ellipsisItem.className = 'page-item disabled';
+                    ellipsisItem.innerHTML = `<span class="page-link">...</span>`;
+                    pagination.appendChild(ellipsisItem);
+                }
+                
+                const lastPageItem = document.createElement('li');
+                lastPageItem.className = 'page-item';
+                lastPageItem.innerHTML = `<a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a>`;
+                pagination.appendChild(lastPageItem);
+            }
+            
+            // 下一页按钮
+            const nextItem = document.createElement('li');
+            nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextItem.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">下一页</a>`;
+            pagination.appendChild(nextItem);
+            
+            // 绑定分页按钮事件
+            document.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    if (page >= 1 && page <= totalPages) {
+                        currentPage = page;
+                        renderMemberTable();
+                    }
+                });
+            });
+        }
+
+        // 显示添加模态框
+        function showAddModal() {
+            currentEditId = null;
+            document.getElementById('memberModalLabel').textContent = '添加党员档案';
+            document.getElementById('memberForm').reset();
+            document.getElementById('fileIn').checked = true;
+            document.getElementById('memberId').value = '';
+            document.getElementById('memberTypeGroup').style.display = 'none';
+            document.getElementById('transferPlaceGroup').style.display = 'none';
+            document.getElementById('transferDateGroup').style.display = 'none';
+            
+            // 设置默认支部为镇政府
+            document.getElementById('branch').value = '镇政府';
+            
+            const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+            modal.show();
+        }
+
+        // 显示编辑模态框
+        function showEditModal(id) {
+            currentEditId = id;
+            const member = memberData.find(m => m.id === id);
+            
+            if (member) {
+                document.getElementById('memberModalLabel').textContent = '编辑党员档案';
+                document.getElementById('memberId').value = member.memberId;
+                document.getElementById('memberName').value = member.name;
+                document.getElementById('joinYear').value = member.joinYear;
+                document.getElementById('branch').value = member.branch;
+                
+                // 设置档案情况
+                if (member.fileStatus === '有档案') {
+                    document.getElementById('fileIn').checked = true;
+                } else if (member.fileStatus === '无档案') {
+                    document.getElementById('fileOut').checked = true;
+                } else if (member.fileStatus === '已转出') {
+                    document.getElementById('fileTransfer').checked = true;
+                } else if (member.fileStatus === '未入册') {
+                    document.getElementById('fileUnregistered').checked = true;
+                }
+                
+                // 设置党员类型
+                document.getElementById('memberType').value = member.memberType || '';
+                
+                // 设置调整时间
+                document.getElementById('adjustDate').value = member.adjustDate || '';
+                
+                // 设置转出地和转出时间
+                document.getElementById('transferPlace').value = member.transferPlace || '';
+                document.getElementById('transferDate').value = member.transferDate || '';
+                
+                // 显示/隐藏相关输入框
+                const memberTypeGroup = document.getElementById('memberTypeGroup');
+                const transferPlaceGroup = document.getElementById('transferPlaceGroup');
+                const transferDateGroup = document.getElementById('transferDateGroup');
+                if (member.fileStatus === '未入册') {
+                    memberTypeGroup.style.display = 'block';
+                    transferPlaceGroup.style.display = 'none';
+                    transferDateGroup.style.display = 'none';
+                } else if (member.fileStatus === '已转出') {
+                    memberTypeGroup.style.display = 'none';
+                    transferPlaceGroup.style.display = 'block';
+                    transferDateGroup.style.display = 'block';
+                } else {
+                    memberTypeGroup.style.display = 'none';
+                    transferPlaceGroup.style.display = 'none';
+                    transferDateGroup.style.display = 'none';
+                }
+                
+                const modal = new bootstrap.Modal(document.getElementById('memberModal'));
+                modal.show();
+            }
+        }
+
+        // 保存党员信息
+        function saveMember() {
+            const memberId = document.getElementById('memberId').value;
+            const name = document.getElementById('memberName').value;
+            const joinYear = document.getElementById('joinYear').value;
+            const branch = document.getElementById('branch').value;
+            const fileStatus = document.querySelector('input[name="fileStatus"]:checked').value;
+            const memberType = document.getElementById('memberType').value;
+            const adjustDate = document.getElementById('adjustDate').value;
+            const transferPlace = document.getElementById('transferPlace').value;
+            const transferDate = document.getElementById('transferDate').value;
+            
+            if (!memberId || !name || !joinYear || !branch) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+            
+            // 验证入党年度格式
+            if (!/^\d{4}$/.test(joinYear)) {
+                alert('入党年度必须是4位数字！');
+                return;
+            }
+            
+            // 如果档案情况是未入册，必须选择党员类型
+            if (fileStatus === '未入册' && !memberType) {
+                alert('请选择党员类型！');
+                return;
+            }
+            
+            // 如果档案情况是已转出，必须填写转出地和转出时间
+            if (fileStatus === '已转出') {
+                if (!transferPlace) {
+                    alert('请填写转出地！');
+                    return;
+                }
+                if (!transferDate) {
+                    alert('请填写转出时间！');
+                    return;
+                }
+            }
+            
+            if (currentEditId === null) {
+                // 检查党员编号是否已存在
+                if (memberData.some(m => m.memberId === memberId)) {
+                    alert('该党员编号已存在，请使用其他编号！');
+                    return;
+                }
+                
+                // 添加新党员
+                const newId = memberData.length > 0 ? Math.max(...memberData.map(m => m.id)) + 1 : 1;
+                memberData.push({
+                    id: newId,
+                    memberId,
+                    joinYear,
+                    name,
+                    branch,
+                    fileStatus,
+                    memberType: fileStatus === '未入册' ? memberType : "",
+                    adjustDate: fileStatus === '未入册' ? adjustDate : "",
+                    transferPlace: fileStatus === '已转出' ? transferPlace : "",
+                    transferDate: fileStatus === '已转出' ? transferDate : ""
+                });
+            } else {
+                // 更新现有党员
+                const memberIndex = memberData.findIndex(m => m.id === currentEditId);
+                if (memberIndex !== -1) {
+                    memberData[memberIndex] = {
+                        ...memberData[memberIndex],
+                        memberId,
+                        joinYear,
+                        name,
+                        branch,
+                        fileStatus,
+                        memberType: fileStatus === '未入册' ? memberType : "",
+                        adjustDate: fileStatus === '未入册' ? adjustDate : "",
+                        transferPlace: fileStatus === '已转出' ? transferPlace : "",
+                        transferDate: fileStatus === '已转出' ? transferDate : ""
+                    };
+                }
+            }
+            
+            updateStatistics();
+            currentData = memberData;
+            renderMemberTable();
+            saveDataToStorage();
+            bootstrap.Modal.getInstance(document.getElementById('memberModal')).hide();
+        }
+
+        // 删除党员
+        function deleteMember(id) {
+            if (confirm('确定要删除这条党员记录吗？')) {
+                memberData = memberData.filter(m => m.id !== id);
+                updateStatistics();
+                currentData = memberData;
+                renderMemberTable();
+                saveDataToStorage();
+            }
+        }
+
+        // 处理查询
+        function handleSearch() {
+            const branch = document.getElementById('branchSelect').value;
+            const year = document.getElementById('yearSearch').value;
+            const status = document.getElementById('statusSelect').value;
+            
+            currentData = memberData;
+            
+            if (branch !== 'all') {
+                currentData = currentData.filter(m => m.branch === branch);
+            }
+            
+            if (year) {
+                currentData = currentData.filter(m => m.joinYear.includes(year));
+            }
+            
+            if (status !== 'all') {
+                currentData = currentData.filter(m => m.fileStatus === status);
+            }
+            
+            currentPage = 1;
+            renderMemberTable();
+        }
+
+        // 处理关键词搜索
+        function handleKeywordSearch() {
+            const keyword = document.getElementById('keywordInput').value.toLowerCase();
+            
+            if (!keyword) {
+                currentData = memberData;
+            } else {
+                currentData = memberData.filter(m => 
+                    m.name.toLowerCase().includes(keyword) || 
+                    m.memberId.toLowerCase().includes(keyword) ||
+                    m.branch.toLowerCase().includes(keyword)
+                );
+            }
+            
+            currentPage = 1;
+            renderMemberTable();
+        }
+
+        // 重置查询条件
+        function handleReset() {
+            document.getElementById('branchSelect').value = 'all';
+            document.getElementById('yearSearch').value = '';
+            document.getElementById('statusSelect').value = 'all';
+            document.getElementById('keywordInput').value = '';
+            
+            currentData = memberData;
+            currentPage = 1;
+            renderMemberTable();
+        }
+
+        // 显示导入模态框
+        function showImportModal() {
+            const modal = new bootstrap.Modal(document.getElementById('importModal'));
+            modal.show();
+        }
+
+        // 导出到Excel
+        function exportToExcel() {
+            if (memberData.length === 0) {
+                alert('没有数据可导出！');
+                return;
+            }
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 准备数据
+            const exportData = memberData.map(member => ({
+                '党员编号': member.memberId,
+                '入党年度': member.joinYear,
+                '党员姓名': member.name,
+                '所属支部': member.branch,
+                '档案情况': member.fileStatus,
+                '党员类型': member.memberType || '',
+                '调整时间': member.adjustDate || '',
+                '转出地': member.transferPlace || '',
+                '转出时间': member.transferDate || ''
+            }));
+            
+            // 创建工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            
+            // 将工作表添加到工作簿
+            XLSX.utils.book_append_sheet(wb, ws, '党员档案');
+            
+            // 导出Excel文件
+            XLSX.writeFile(wb, '党员档案.xlsx');
+        }
+
+        // 从Excel导入 - 如果有任何错误，则全部数据均无法导入
+        function importFromExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('请选择要导入的Excel文件！');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // 获取第一个工作表
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // 将工作表转换为JSON
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                
+                // 验证所有数据
+                let errorMessages = [];
+                let tempData = [];
+                
+                jsonData.forEach((item, index) => {
+                    // 验证数据格式
+                    if (!item['党员编号']) {
+                        errorMessages.push(`第${index + 2}行：缺少党员编号`);
+                        return;
+                    }
+                    
+                    if (!item['党员姓名']) {
+                        errorMessages.push(`第${index + 2}行：缺少党员姓名`);
+                        return;
+                    }
+                    
+                    if (!item['入党年度']) {
+                        errorMessages.push(`第${index + 2}行：缺少入党年度`);
+                        return;
+                    }
+                    
+                    if (!item['所属支部']) {
+                        errorMessages.push(`第${index + 2}行：缺少所属支部`);
+                        return;
+                    }
+                    
+                    // 检查是否已存在相同编号的党员
+                    if (memberData.some(m => m.memberId === item['党员编号'])) {
+                        errorMessages.push(`第${index + 2}行：党员编号 "${item['党员编号']}" 已存在`);
+                        return;
+                    }
+                    
+                    // 验证入党年度格式
+                    const joinYear = item['入党年度'].toString();
+                    if (!/^\d{4}$/.test(joinYear)) {
+                        errorMessages.push(`第${index + 2}行：入党年度格式错误，应为4位数字`);
+                        return;
+                    }
+                    
+                    // 验证档案情况
+                    const fileStatus = item['档案情况'] || '有档案';
+                    if (!['有档案', '无档案', '已转出', '未入册'].includes(fileStatus)) {
+                        errorMessages.push(`第${index + 2}行：档案情况值无效，应为"有档案"、"无档案"、"已转出"或"未入册"`);
+                        return;
+                    }
+                    
+                    // 如果档案情况是未入册，必须要有党员类型
+                    if (fileStatus === '未入册' && !item['党员类型']) {
+                        errorMessages.push(`第${index + 2}行：未入册党员必须指定党员类型`);
+                        return;
+                    }
+                    
+                    // 如果档案情况是已转出，必须要有转出地和转出时间
+                    if (fileStatus === '已转出') {
+                        if (!item['转出地']) {
+                            errorMessages.push(`第${index + 2}行：已转出党员必须指定转出地`);
+                            return;
+                        }
+                        if (!item['转出时间']) {
+                            errorMessages.push(`第${index + 2}行：已转出党员必须指定转出时间`);
+                            return;
+                        }
+                    }
+                    
+                    // 添加到临时数据
+                    tempData.push({
+                        memberId: item['党员编号'],
+                        joinYear: joinYear,
+                        name: item['党员姓名'],
+                        branch: item['所属支部'],
+                        fileStatus: fileStatus,
+                        memberType: item['党员类型'] || '',
+                        adjustDate: item['调整时间'] || '',
+                        transferPlace: item['转出地'] || '',
+                        transferDate: item['转出时间'] || ''
+                    });
+                });
+                
+                // 如果有任何错误，则全部数据均无法导入
+                if (errorMessages.length > 0) {
+                    bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                    fileInput.value = '';
+                    
+                    let resultMessage = `导入失败，发现 ${errorMessages.length} 个错误：\n\n${errorMessages.join('\n')}`;
+                    alert(resultMessage);
+                    return;
+                }
+                
+                // 如果没有错误，则导入所有数据
+                let newId = memberData.length > 0 ? Math.max(...memberData.map(m => m.id)) + 1 : 1;
+                
+                tempData.forEach(item => {
+                    memberData.push({
+                        id: newId++,
+                        ...item
+                    });
+                });
+                
+                // 更新统计和显示
+                updateStatistics();
+                currentData = memberData;
+                currentPage = 1;
+                renderMemberTable();
+                saveDataToStorage();
+                bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+                fileInput.value = '';
+                
+                alert(`成功导入 ${tempData.length} 条党员记录！`);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+    </script>
+</body>
+</html>
